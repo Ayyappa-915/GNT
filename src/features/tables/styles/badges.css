@@ -1,0 +1,20 @@
+/* ===== BADGES ===== */
+.badge {
+  padding: 5px 14px;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.badge-success {
+  background-color: #e7f8ee;
+  color: #1f9254;
+  border: 1px solid #b7e4c7;
+}
+
+.badge-warning {
+  background-color: #fff4e5;
+  color: #f59e0b;
+  border: 1px solid #fde2b8;
+}

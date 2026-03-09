@@ -1,0 +1,64 @@
+/* ============================= */
+/*           APP BASE            */
+/* ============================= */
+
+.app-container {
+  background-color: #f6f7f9;
+  font-family: "Inter", sans-serif;
+}
+
+/* ============================= */
+/*              NAV              */
+/* ============================= */
+
+.nav {
+  display: flex;
+  justify-content: center;
+  gap: 1%;
+  padding: 16px;
+}
+
+.nav a {
+  text-decoration: none;
+  color: #444;
+  font-size: 15px;
+  padding: 6px 12px;
+  border-radius: 6px;
+}
+
+/* Hover */
+.nav a:hover {
+  background-color: #f1f5ff;
+  color: #2a5bd7;
+}
+
+/* Active */
+.nav a.active {
+  background-color: #2a5bd7;
+  color: #ffffff;
+}
+
+/* ============================= */
+/*        PAGE CONTAINER         */
+/* ============================= */
+
+.page-container {
+  display: flex;
+  justify-content: center;
+  padding: 1%;
+}
+
+@media (max-width: 900px) {
+ .nav a {
+  text-decoration: none;
+  color: #444;
+  font-size: 15px;
+  padding: 2%;
+  border-radius: 6px;
+} 
+.nav
+{
+  justify-content: space-between;
+}
+
+}
