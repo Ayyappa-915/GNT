@@ -176,7 +176,7 @@ useEffect(() => {
 
   }
 
-}, [currentPage, pageData , fetchPageData]);
+}, [currentPage, pageData ]);
 
   /* ============================================================
      NEXT PAGE HANDLER
