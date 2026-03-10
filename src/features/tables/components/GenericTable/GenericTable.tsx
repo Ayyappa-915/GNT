@@ -16,12 +16,7 @@ import {
   ColumnDef,
 } from "@tanstack/react-table";
 import { useState, useMemo, useRef, useEffect } from "react";
-import {
-  FaSort,
-  FaEye,
-  FaEdit,
-  FaTrash,
-} from "react-icons/fa";
+import { FaSort, FaEye, FaEdit, FaTrash } from "react-icons/fa";
 import { GenericTableProps } from "./GenericTable.types";
 import "./GenericTable.css";
 
@@ -81,6 +76,22 @@ function GenericTable<T>({
   const [sorting, setSorting] = useState<SortingState>([]);
 
   /* ============================================================
+     TABLE BODY REF (FOR SCROLL RESET)
+  ============================================================ */
+
+  const tableBodyRef = useRef<HTMLDivElement>(null);
+
+  /* ============================================================
+     RESET SCROLL WHEN PAGE CHANGES
+  ============================================================ */
+
+  useEffect(() => {
+  if (tableBodyRef.current) {
+    tableBodyRef.current.scrollTop = 0;
+  }
+}, [currentPage]);
+
+  /* ============================================================
      ACTION COLUMN
   ============================================================ */
 
@@ -99,7 +110,6 @@ function GenericTable<T>({
 
           return (
             <div className="actions">
-
               {actions?.onView && (
                 <button
                   className="action-btn"
@@ -126,7 +136,6 @@ function GenericTable<T>({
                   <FaTrash />
                 </button>
               )}
-
             </div>
           );
         },
@@ -152,7 +161,6 @@ function GenericTable<T>({
   ============================================================ */
 
   const getPaginationRange = (): Array<number | "..."> => {
-
     const SIBLING_PAGE_COUNT = 1;
 
     const paginationRange: Array<number | "..."> = [];
@@ -202,10 +210,9 @@ function GenericTable<T>({
   ============================================================ */
 
   const renderSortIcon = (column: any) => {
-  if (!column.getCanSort()) return null;
-
-  return <FaSort size={12} opacity={0.6} />;
-};
+    if (!column.getCanSort()) return null;
+    return <FaSort size={12} opacity={0.6} />;
+  };
 
   /* ============================================================
      COMPONENT RENDER
@@ -256,7 +263,7 @@ function GenericTable<T>({
 
         {/* ================= TABLE BODY ================= */}
 
-        <div className="table-body">
+        <div className="table-body" ref={tableBodyRef}>
           {table.getRowModel().rows.map((row) => (
             <div key={row.id} className="table-row">
               {row.getVisibleCells().map((cell) => {
