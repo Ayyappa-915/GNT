@@ -10,16 +10,11 @@ export const postColumns: ColumnDef<Post>[] = [
   {
     header: "Title",
     accessorKey: "title",
-    size: 30,
+    size: 40,
   },
   {
     header: "Body",
     accessorKey: "body",
-    size: 30,
-  },
-  {
-    header: "Tags",
-    accessorKey: "tags",
-    size: 10,
-  },
+    size: 40,
+  }
 ];
