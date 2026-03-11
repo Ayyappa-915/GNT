@@ -1,12 +1,5 @@
 /* ============================================================
    POSTS PAGE
-
-   Responsibilities:
-   - Fetch paginated data from API
-   - Send limit + skip parameters to API
-   - Cache fetched pages in Redux
-   - Prevent duplicate API calls
-   - Pass data + pagination handlers to GenericTable
 ============================================================ */
 
 import React, { useEffect, useState } from "react";
@@ -24,7 +17,7 @@ import { RootState } from "../../../app/store";
    API CONFIGURATION
 ============================================================ */
 
-const BASE_URL = "https://dummyjson.com/posts";
+const BASE_URL = "https://jsonplaceholder.typicode.com/posts";
 const PAGE_SIZE = 25;
 
 /* ============================================================
@@ -35,75 +28,51 @@ const PostsPage = () => {
 
   const dispatch = useAppDispatch();
 
-  /* ============================================================
-     REDUX STATE
-     - currentPage : current page index
-     - cachedPages : pages already fetched from API
-  ============================================================ */
-
   const { currentPage, cachedPages } = useAppSelector(
     (state: RootState) => state.tables.posts
   );
 
-  /* ============================================================
-     LOCAL STATE
-     - totalPages : total number of pages from API
-  ============================================================ */
-
   const [totalPages, setTotalPages] = useState(0);
-
-  /* ============================================================
-     CURRENT PAGE DATA FROM CACHE
-     Used to avoid unnecessary API calls
-  ============================================================ */
 
   const pageData = cachedPages[currentPage];
 
   /* ============================================================
      FETCH PAGE DATA FROM API
-
-     Responsibilities:
-     - Calculate skip value
-     - Call API with limit + skip
-     - Transform API response
-     - Store page data in Redux cache
   ============================================================ */
 
   const fetchPageData = async (pageIndex: number) => {
 
     try {
 
-      const skip = pageIndex * PAGE_SIZE;
-
       const response = await axios.get(BASE_URL, {
         params: {
-          limit: PAGE_SIZE,
-          skip: skip
+          _page: pageIndex + 1,
+          _limit: PAGE_SIZE
         }
       });
 
-      const records = response.data.posts;
-      const totalRecords = response.data.total;
+      const records = response.data;
 
       /* --------------------------------------------------------
-         Calculate total pages
+         Get total records from response header
       -------------------------------------------------------- */
+
+      const totalRecords = Number(response.headers["x-total-count"]);
 
       setTotalPages(Math.ceil(totalRecords / PAGE_SIZE));
 
       /* --------------------------------------------------------
-         Transform API data to table format
+         Transform API response
       -------------------------------------------------------- */
 
       const pageData: Post[] = records.map((item: any) => ({
         id: item.id,
         title: item.title,
-        body: item.body,
-        tags: item.tags.join(", "),
+        body: item.body
       }));
 
       /* --------------------------------------------------------
-         Store fetched page in Redux cache
+         Cache page in Redux
       -------------------------------------------------------- */
 
       dispatch(
@@ -123,65 +92,25 @@ const PostsPage = () => {
   };
 
   /* ============================================================
-   PREVENT DUPLICATE API CALLS (STRICT MODE GUARD)
+     STRICT MODE GUARD
+  ============================================================ */
 
-   React 18 StrictMode runs useEffect twice in development:
-   - First mount → useEffect runs
-   - React test cycle → useEffect runs again
+  const fetchedRef = React.useRef(false);
 
-   This can cause the API to be called twice.
+  useEffect(() => {
 
-   To prevent this, we use useRef as a flag.
+    if (!fetchedRef.current && !pageData) {
 
-   Why useRef?
-   - Stores a persistent value across renders
-   - Updating ref does NOT trigger re-render
-   - Allows us to track if API was already called
+      fetchedRef.current = true;
 
-   fetchedRef.current acts like a boolean guard:
-   false → API not called yet
-   true  → API already called
-============================================================ */
+      fetchPageData(currentPage);
 
-const fetchedRef = React.useRef(false);
+    }
 
-
-/* ============================================================
-   LOAD DATA WHEN PAGE CHANGES
-
-   Logic:
-   - Check if page data already exists in Redux cache
-   - Ensure API is not already triggered using fetchedRef
-   - Call API only once
-   - After calling API, set fetchedRef to true
-     so StrictMode second run does not call API again
-============================================================ */
-
-useEffect(() => {
-
-  if (!fetchedRef.current && !pageData) {
-
-    /* --------------------------------------------------------
-       Mark API as triggered
-       This prevents duplicate calls during StrictMode rerun
-    -------------------------------------------------------- */
-
-    fetchedRef.current = true;
-
-    /* --------------------------------------------------------
-       Fetch page data from API
-    -------------------------------------------------------- */
-
-    fetchPageData(currentPage);
-
-  }
-
-}, [currentPage, pageData ]);
+  }, [currentPage, pageData]);
 
   /* ============================================================
-     NEXT PAGE HANDLER
-     - Move to next page
-     - Fetch data if not cached
+     NEXT PAGE
   ============================================================ */
 
   const handleNext = async () => {
@@ -204,27 +133,30 @@ useEffect(() => {
   };
 
   /* ============================================================
-     PREVIOUS PAGE HANDLER
+     PREVIOUS PAGE
   ============================================================ */
 
-  const handlePrevious = () => {
+ const handlePrevious = async () => {
 
-    if (currentPage === 0) return;
+  const prevPage = currentPage - 1;
 
-    dispatch(
-      setPage({
-        table: "posts",
-        page: currentPage - 1
-      })
-    );
+  if (prevPage < 0) return;
 
-  };
+  if (!cachedPages[prevPage]) {
+    await fetchPageData(prevPage);
+  }
+
+  dispatch(
+    setPage({
+      table: "posts",
+      page: prevPage
+    })
+  );
+
+};
 
   /* ============================================================
-     PAGE NUMBER CLICK HANDLER
-
-     - Used for already fetched pages
-     - Fetch API only if page not cached
+     PAGE NUMBER CLICK
   ============================================================ */
 
   const handlePageChange = async (pageIndex: number) => {
@@ -243,7 +175,7 @@ useEffect(() => {
   };
 
   /* ============================================================
-     RENDER GENERIC TABLE
+     RENDER TABLE
   ============================================================ */
 
   return (
