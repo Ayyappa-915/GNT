@@ -2,9 +2,9 @@
    GENERIC TABLE COMPONENT
    - Sorting Support
    - Smart Pagination
-   - Optional Action Column (View / Edit / Delete)
-   - Smart Tooltip (Only When Overflowing)
-   - Built using TanStack React Table
+   - Optional Action Column
+   - Overflow Tooltip
+   - Auto Page Switch When Next Page Cached
 ============================================================ */
 
 import {
@@ -15,13 +15,14 @@ import {
   SortingState,
   ColumnDef,
 } from "@tanstack/react-table";
+
 import { useState, useMemo, useRef, useEffect } from "react";
 import { FaSort, FaEye, FaEdit, FaTrash } from "react-icons/fa";
 import { GenericTableProps } from "./GenericTable.types";
 import "./GenericTable.css";
 
 /* ============================================================
-   OVERFLOW TOOLTIP COMPONENT
+   OVERFLOW TOOLTIP
 ============================================================ */
 
 function OverflowTooltip({ value }: { value: string }) {
@@ -54,7 +55,7 @@ function OverflowTooltip({ value }: { value: string }) {
 }
 
 /* ============================================================
-   GENERIC TABLE FUNCTION
+   GENERIC TABLE
 ============================================================ */
 
 function GenericTable<T>({
@@ -62,22 +63,14 @@ function GenericTable<T>({
   columns,
   currentPage,
   totalPages,
+  cachedPages,
   onNext,
   onPrevious,
   onPageChange,
-  cachedPages,
   actions,
 }: GenericTableProps<T>) {
 
-  /* ============================================================
-     SORTING STATE
-  ============================================================ */
-
   const [sorting, setSorting] = useState<SortingState>([]);
-
-  /* ============================================================
-     TABLE BODY REF (FOR SCROLL RESET)
-  ============================================================ */
 
   const tableBodyRef = useRef<HTMLDivElement>(null);
 
@@ -86,10 +79,40 @@ function GenericTable<T>({
   ============================================================ */
 
   useEffect(() => {
-  if (tableBodyRef.current) {
-    tableBodyRef.current.scrollTop = 0;
-  }
-}, [currentPage]);
+    if (tableBodyRef.current) {
+      tableBodyRef.current.scrollTop = 0;
+    }
+  }, [currentPage]);
+
+  /* ============================================================
+     AUTO MOVE TO NEXT PAGE WHEN SCROLL BOTTOM
+     (ONLY IF NEXT PAGE ALREADY CACHED)
+  ============================================================ */
+
+  useEffect(() => {
+
+    const element = tableBodyRef.current;
+
+    if (!element) return;
+
+    const handleScroll = () => {
+
+      const reachedBottom =
+        element.scrollTop + element.clientHeight >= element.scrollHeight - 5;
+
+      const nextPageExists = cachedPages[currentPage + 1];
+
+      if (reachedBottom && nextPageExists) {
+        onNext();
+      }
+
+    };
+
+    element.addEventListener("scroll", handleScroll);
+
+    return () => element.removeEventListener("scroll", handleScroll);
+
+  }, [currentPage, cachedPages]);
 
   /* ============================================================
      ACTION COLUMN
@@ -110,6 +133,7 @@ function GenericTable<T>({
 
           return (
             <div className="actions">
+
               {actions?.onView && (
                 <button
                   className="action-btn"
@@ -136,6 +160,7 @@ function GenericTable<T>({
                   <FaTrash />
                 </button>
               )}
+
             </div>
           );
         },
@@ -157,10 +182,11 @@ function GenericTable<T>({
   });
 
   /* ============================================================
-     PAGINATION RANGE
+     SMART PAGINATION RANGE
   ============================================================ */
 
   const getPaginationRange = (): Array<number | "..."> => {
+
     const SIBLING_PAGE_COUNT = 1;
 
     const paginationRange: Array<number | "..."> = [];
@@ -195,6 +221,7 @@ function GenericTable<T>({
     }
 
     if (rightSiblingIndex < lastPageIndex) {
+
       if (rightSiblingIndex < lastPageIndex - 1) {
         paginationRange.push("...");
       }
@@ -214,15 +241,16 @@ function GenericTable<T>({
     return <FaSort size={12} opacity={0.6} />;
   };
 
+
   /* ============================================================
-     COMPONENT RENDER
+     RENDER
   ============================================================ */
 
   return (
     <div className="table-wrapper">
       <div className="table-card">
 
-        {/* ================= TABLE HEADER ================= */}
+        {/* ================= HEADER ================= */}
 
         <div className="table-header">
           {table.getHeaderGroups().map((headerGroup) =>
@@ -261,11 +289,12 @@ function GenericTable<T>({
           )}
         </div>
 
-        {/* ================= TABLE BODY ================= */}
+        {/* ================= BODY ================= */}
 
         <div className="table-body" ref={tableBodyRef}>
           {table.getRowModel().rows.map((row) => (
             <div key={row.id} className="table-row">
+
               {row.getVisibleCells().map((cell) => {
 
                 const rawValue = cell.getValue();
@@ -294,7 +323,9 @@ function GenericTable<T>({
                     )}
                   </div>
                 );
+
               })}
+
             </div>
           ))}
         </div>
@@ -322,21 +353,17 @@ function GenericTable<T>({
               }
 
               const pageIndex = item;
-              const isPageCached = cachedPages[pageIndex];
 
               return (
                 <button
-                  key={pageIndex}
-                  disabled={!isPageCached}
-                  onClick={() =>
-                    isPageCached && onPageChange(pageIndex)
-                  }
-                  className={`page-number ${
-                    currentPage === pageIndex ? "active" : ""
-                  }`}
-                >
-                  {pageIndex + 1}
-                </button>
+                    key={pageIndex}
+                    onClick={() => onPageChange(pageIndex)}
+                    className={`page-number ${
+                      currentPage === pageIndex ? "active" : ""
+                    }`}
+                  >
+                    {pageIndex + 1}
+                  </button>
               );
             })}
           </div>
